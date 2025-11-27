@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Your Cart</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">Supermarket</a>
+    <ul class="navbar-nav ms-auto">
+      <li class="nav-item"><a class="nav-link" href="/shopping">Continue Shopping</a></li>
+      <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <% if (messages && messages.length) { %>
+    <div class="alert alert-info"><%= messages %></div>
+  <% } %>
+  <h2 class="mb-3">Your Cart</h2>
+
+  <% if (!cart || cart.length === 0) { %>
+    <p>Your cart is empty.</p>
+    <a href="/shopping" class="btn btn-primary">Back to Shop</a>
+  <% } else { %>
+
+  <table class="table table-striped text-center">
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Qty</th>
+        <th>Price</th>
+        <th>Total</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% let total = 0; %>
+      <% cart.forEach(item => {
+          const price = parseFloat(item.price) || 0;
+          const qty = parseInt(item.qty || 0, 10) || 0;
+          total += price * qty;
+      %>
+      <tr>
+        <td><%= item.productName %></td>
+        <td>
+          <form action="/cart/update/<%= item.id %>" method="POST" class="d-flex justify-content-center">
+            <input type="number" name="qty" value="<%= qty %>" min="0" class="form-control" style="width:100px;">
+            <button class="btn btn-sm btn-primary ms-2">Update</button>
+          </form>
+        </td>
+        <td>$<%= price.toFixed(2) %></td>
+        <td>$<%= (price * qty).toFixed(2) %></td>
+        <td>
+          <form action="/cart/remove/<%= item.id %>" method="POST" onsubmit="return confirm('Remove item from cart?')">
+            <button class="btn btn-sm btn-danger">Remove</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+  <h4>Total: $<%= total.toFixed(2) %></h4>
+
+  <form action="/confirm-cart" method="POST">
+    <button class="btn btn-success w-100 mt-3">Confirm Order</button>
+  </form>
+
+  <% } %>
+</div>
+
+</body>
+</html>
