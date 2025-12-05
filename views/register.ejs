@@ -30,6 +30,21 @@
       <label>Contact</label>
       <input name="contact" class="form-control">
     </div>
+    <div class="mb-3">
+      <label>Address</label>
+      <input name="address" class="form-control">
+    </div>
+
+    <!-- Role selection -->
+    <div class="mb-3">
+      <label>Role</label>
+      <select name="role" class="form-select">
+        <option value="user" selected>User</option>
+        <option value="admin">Admin</option>
+      </select>
+      <div class="form-text">Choose role. Granting Admin via public signup is insecure — remove in production.</div>
+    </div>
+
     <button class="btn btn-success">Register</button>
   </form>
 </div>

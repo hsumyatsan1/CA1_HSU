@@ -22,19 +22,30 @@ module.exports = {
         req.flash('error', 'Username, email and password required');
         return res.redirect('/register');
       }
-      await toPromise(User.add, {
-        username: username.trim(),
-        email: email.trim().toLowerCase(),
-        password,
-        address: address || '',
-        contact: contact || '',
-        role: 'user'
+      const requestedRole = (req.body.role || '').toString().toLowerCase();
+      // default to 'user' unless explicitly 'admin' selected
+      const role = requestedRole === 'admin' ? 'admin' : 'user';
+
+      const User = require('../models/User');
+      await new Promise((resolve, reject) => {
+        User.add({
+          username: username.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+          address: address || '',
+          contact: contact || '',
+          role
+        }, (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        });
       });
+
       req.flash('success', 'Registered — please login');
       return res.redirect('/login');
     } catch (err) {
       console.error('Register error', err);
-      req.flash('error', 'Registration failed');
+      req.flash('error', err.message || 'Registration failed');
       return res.redirect('/register');
     }
   },
