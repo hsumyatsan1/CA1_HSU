@@ -1,105 +1,137 @@
 const express = require('express');
 const session = require('express-session');
 const flash = require('connect-flash');
-const multer = require('multer');
 const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
 
 const ProductController = require('./controllers/ProductController');
 const UserController = require('./controllers/UserController');
-
-console.log('ProductController keys:', Object.keys(ProductController || {}));
-console.log('UserController keys:', Object.keys(UserController || {}));
-
-// check required handlers used by routes
-const needed = [
-  ['ProductController', 'list'],
-  ['ProductController', 'detail'],
-  ['ProductController', 'addToCart'],
-  ['ProductController', 'viewCart'],
-  ['ProductController', 'updateCartItem'],
-  ['ProductController', 'removeFromCart'],
-  ['ProductController', 'confirmCart'],
-  ['ProductController', 'checkout'],
-  ['ProductController', 'inventory'],
-  ['ProductController', 'addForm'],
-  ['ProductController', 'add'],
-  ['ProductController', 'editForm'],
-  ['ProductController', 'update'],
-  ['ProductController', 'delete'],
-  ['UserController', 'registerForm'],
-  ['UserController', 'register'],
-  ['UserController', 'loginForm'],
-  ['UserController', 'login']
-];
-
-for (const [objName, key] of needed) {
-  const obj = objName === 'ProductController' ? ProductController : UserController;
-  if (!obj || typeof obj[key] !== 'function') {
-    console.error(`ERROR: ${objName}.${key} is missing or not a function`);
-  }
-}
+const CartController = require('./controllers/CartController');
+const FeedbackController = require('./controllers/FeedbackController');
+const PaymentController = require('./controllers/PaymentController');
 
 const app = express();
 
-// View engine
+// ensure images folder exists
+const uploadsDir = path.join(__dirname, 'public', 'images');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
 app.set('view engine', 'ejs');
-app.use(express.static('public'));
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 app.use(session({
-    secret: 'secret',
-    resave: false,
-    saveUninitialized: true
+  secret: process.env.SESSION_SECRET || 'supermarket-secret',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { maxAge: 1000 * 60 * 60 * 24 }
 }));
-
 app.use(flash());
 
-// Multer config
+// file upload setup
 const storage = multer.diskStorage({
-    destination: './public/images',
-    filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, Date.now() + '-' + Math.random().toString(36).slice(2,9) + ext);
+  }
 });
 const upload = multer({ storage });
 
-// Auth middlewares
-const checkAuth = (req, res, next) => req.session.user ? next() : res.redirect('/login');
-const checkAdmin = (req, res, next) =>
-    req.session.user?.role === 'admin' ? next() : res.redirect('/shopping');
+// auth helpers
+const requireAuth = (req, res, next) => {
+  if (!req.session.user) {
+    req.flash('error', 'Please login first');
+    return res.redirect('/login');
+  }
+  next();
+};
+const requireAdmin = (req, res, next) => {
+  if (!req.session.user || (req.session.user.role || '').toLowerCase() !== 'admin') {
+    req.flash('error', 'Admin only');
+    return res.redirect('/');
+  }
+  next();
+};
 
-// Pages
-app.get('/', (req, res) => res.render('index', { user: req.session.user }));
+// Routes
 
-// Register
-app.get('/register', UserController.registerForm);
-app.post('/register', UserController.register);
-
-// Login
-app.get('/login', UserController.loginForm);
-app.post('/login', UserController.login);
-
-// Logout
-app.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/');
+// Home: show public product listing (guests see no quantity or buy button)
+app.get('/', async (req, res) => {
+  if (req.session.user && (req.session.user.role || '').toLowerCase() === 'admin') {
+    return res.redirect('/inventory');
+  }
+  return ProductController.publicList(req, res);
 });
 
-// Shopping
-app.get('/shopping', checkAuth, ProductController.list);
-app.get('/product/:id', checkAuth, ProductController.detail);
+// auth
+app.get('/register', UserController.registerForm);
+app.post('/register', UserController.register);
+app.get('/login', UserController.loginForm);
+app.post('/login', UserController.login);
+app.get('/logout', (req, res) => {
+  req.session.destroy(() => res.redirect('/'));
+});
 
-// Cart
-app.post('/add-to-cart/:id', checkAuth, ProductController.addToCart);
-app.post('/cart/update/:id', checkAuth, ProductController.updateCartItem);
-app.post('/cart/remove/:id', checkAuth, ProductController.removeFromCart);
-app.get('/cart', checkAuth, ProductController.viewCart);
-app.post('/confirm-cart', checkAuth, ProductController.confirmCart);
-app.get('/checkout', checkAuth, ProductController.checkout);
-// Admin Product CRUD
-app.get('/inventory', checkAuth, checkAdmin, ProductController.inventory);
-app.get('/addProduct', checkAuth, checkAdmin, ProductController.addForm);
-app.post('/addProduct', checkAuth, checkAdmin, upload.single('image'), ProductController.add);
-app.get('/updateProduct/:id', checkAuth, checkAdmin, ProductController.editForm);
-app.post('/updateProduct/:id', checkAuth, checkAdmin, upload.single('image'), ProductController.update);
-app.get('/deleteProduct/:id', checkAuth, checkAdmin, ProductController.delete);
+// shopping & product
+app.get('/shopping', requireAuth, ProductController.listForUser);
+app.get('/product/:id', requireAuth, ProductController.detail);
 
-app.listen(3000, () => console.log("Server running on port 3000"));
+// cart
+app.get('/cart', requireAuth, CartController.listCartItems);
+app.post('/add-to-cart/:id', requireAuth, CartController.addToCart);
+app.post('/cart/update/:id', requireAuth, CartController.updateCartItem);
+app.post('/cart/remove/:id', requireAuth, CartController.removeCartItem);
+app.post('/cart/clear', requireAuth, CartController.clearCart);
+
+// payment
+app.get('/payment', requireAuth, PaymentController.show);
+// accept legacy /payment and form action /payment/process
+app.post('/payment', requireAuth, PaymentController.pay);
+app.post('/payment/process', requireAuth, PaymentController.pay);
+app.get('/receipt/:id', requireAuth, PaymentController.receipt);
+
+// feedback
+app.get('/feedback', requireAuth, FeedbackController.form);
+app.post('/feedback', requireAuth, FeedbackController.submit);
+app.get('/feedback/all', requireAuth, requireAdmin, FeedbackController.list);
+app.get('/feedback/delete/:id', requireAuth, requireAdmin, FeedbackController.delete);
+
+// admin inventory & product management
+app.get('/inventory', requireAuth, requireAdmin, ProductController.inventory);
+app.get('/addProduct', requireAuth, requireAdmin, ProductController.addForm);
+app.post('/product', requireAuth, requireAdmin, upload.single('image'), ProductController.add);
+app.get('/editProduct/:id', requireAuth, requireAdmin, ProductController.editForm);
+app.post('/product/:id', requireAuth, requireAdmin, upload.single('image'), ProductController.update);
+app.get('/deleteProduct/:id', requireAuth, requireAdmin, ProductController.delete);
+
+// admin user management & payments
+app.get('/users', requireAuth, requireAdmin, UserController.list);
+app.get('/deleteUser/:id', requireAuth, requireAdmin, UserController.delete);
+app.get('/payments', requireAuth, requireAdmin, PaymentController.list);
+
+// search route (used by forms on index/shopping)
+app.get('/search', (req, res) => {
+  return ProductController.search(req, res);
+});
+
+// contact page (public + logged-in)
+app.get('/contact', (req, res) => {
+  const messages = [...req.flash('error'), ...req.flash('success')];
+  res.render('contact', { user: req.session.user, messages });
+});
+
+// 404 + error handler
+app.use((req, res) => res.status(404).render('404', { user: req.session.user }));
+app.use((err, req, res, next) => {
+  console.error(err.stack || err);
+  res.status(500).render('error', { user: req.session.user, error: err.message || 'Server error' });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+
+module.exports = app;

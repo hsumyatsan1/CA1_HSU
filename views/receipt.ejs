@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Receipt</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background:#f5f5f5; font-family: "Segoe UI", Roboto, Arial, sans-serif; }
+    .receipt { max-width:420px; margin:40px auto; background:#fff; padding:18px; border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,0.08); }
+    .shop { text-align:center; }
+    .shop h2 { margin:4px 0 0; letter-spacing:1px; font-weight:700; }
+    .shop small { display:block; color:#666; margin-top:6px; }
+    .dashed { border-top:2px dashed #ccc; margin:12px 0; }
+    .item-row { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid #eee; }
+    .item-name { flex:1 1 auto; }
+    .item-meta { width:110px; text-align:right; }
+    .total-box { margin-top:12px; padding:12px; border:1px solid #eee; border-radius:6px; background:#fafafa; }
+    .total-box .amount { font-size:1.2rem; color:#198754; font-weight:700; }
+    @media print { .no-print{display:none} body{background:#fff} .receipt{box-shadow:none} }
+  </style>
+</head>
+<body>
+  <div class="receipt">
+    <div class="shop">
+      <h1>CASH RECEIPT</h1>
+      <h2>Supermarket</h2>
+      <small>Clementi St12, Singapore</small>
+      <small>Phone: +61 2 3456 7890 · Email: support@supermarket.website</small>
+    </div>
+
+    <div class="dashed"></div>
+
+    <div>
+      <p class="mb-1"><strong>Date:</strong>
+        <%= (payment && payment.created_at) ? new Date(payment.created_at).toLocaleString() : (order && order.createdAt) ? new Date(order.createdAt).toLocaleString() : new Date().toLocaleString() %>
+      </p>
+      <p class="mb-1"><strong>Transaction ID:</strong> <%= payment && payment.id ? payment.id : (order && order.paymentId) ? order.paymentId : 'N/A' %></p>
+      <p class="mb-0"><strong>Cashier:</strong> Hsu</p>
+    </div>
+
+    <div class="dashed"></div>
+
+    <% const items = (order && order.items) ? order.items : (Array.isArray(order) ? order : []); %>
+    <% if (!items || !items.length) { %>
+      <p class="text-muted">No items available</p>
+    <% } else { %>
+      <div>
+        <% items.forEach(it => { 
+             const price = parseFloat(it.price || 0);
+             const qty = parseInt(it.qty || it.quantity || 1, 10) || 1;
+             const lineTotal = +(price * qty).toFixed(2);
+        %>
+          <div class="item-row">
+            <div class="item-name">
+              <strong><%= it.productName %></strong><br>
+              <small class="text-muted">Qty: <%= qty %> x $<%= price.toFixed(2) %></small>
+            </div>
+            <div class="item-meta">
+              $<%= lineTotal.toFixed(2) %>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+
+    <div class="dashed"></div>
+
+    <div class="total-box">
+      <div class="d-flex justify-content-between align-items-center">
+        <div><strong>Total Payment</strong></div>
+        <div class="amount">$<%= parseFloat((order && order.total) ? order.total : (payment && payment.total) ? payment.total : 0).toFixed(2) %></div>
+      </div>
+    </div>
+
+    <div class="text-center mt-3">
+      <small class="text-muted">Thank you for shopping with us</small>
+    </div>
+
+    <div class="mt-3 no-print d-flex gap-2">
+      <a href="/shopping" class="btn btn-primary btn-sm">Back to shopping</a>
+      <button onclick="window.print()" class="btn btn-secondary btn-sm">Print Receipt</button>
+    </div>
+  </div>
+</body>
+</html>

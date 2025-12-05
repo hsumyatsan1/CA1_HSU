@@ -1,0 +1,27 @@
+body {
+  background: radial-gradient(circle at 20% 20%, #f3f7ff, #e8ecff 25%, transparent 40%),
+              radial-gradient(circle at 80% 0%, #ffe8f0, #ffe1eb 20%, transparent 45%),
+              linear-gradient(135deg, #f8fbff 0%, #f3f6ff 45%, #f7f4ff 100%);
+  min-height: 100vh;
+}
+
+.card {
+  border: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.navbar {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.section-title {
+  letter-spacing: 0.4px;
+}
