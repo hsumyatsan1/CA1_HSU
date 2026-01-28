@@ -111,17 +111,23 @@ class PayPalController {
           total += (parseFloat(item.price) * parseInt(item.quantity));
         });
 
-        // Create payment record
-        const paymentData = {
-          user_id: userId,
-          amount: total,
-          payment_method: 'paypal',
-          status: 'completed',
-          transaction_id: captureResult.id,
-          payment_date: new Date()
+        req.session.lastOrder = {
+          items: cartItems.map(i => ({
+            productName: i.productName || i.name,
+            price: parseFloat(i.price || 0),
+            qty: parseInt(i.quantity || i.qty || 1, 10) || 1
+          })),
+          total: total.toFixed(2),
+          createdAt: new Date()
         };
 
-        const paymentId = await Payment.create(paymentData);
+        // Create payment record
+        const paymentId = await toPromise(Payment.add, {
+          userId,
+          total: total.toFixed(2),
+          cardLastFour: null,
+          status: 'completed'
+        });
         console.log('Payment record created:', paymentId);
 
         // Clear cart

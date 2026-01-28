@@ -67,7 +67,7 @@ class PaymentController {
 
   static async pay(req, res) {
     try {
-      const { paymentMethod } = req.body;
+      const { paymentMethod, cardName, cardNumber, expiryDate, cardPin } = req.body;
       const userId = req.session.user.id;
       const cartItems = await buildCartFromSession(req.session.cart);
       
@@ -91,11 +91,39 @@ class PaymentController {
       });
 
       if (paymentMethod === 'credit-card') {
+        const hasAnyCardField = cardName || cardNumber || expiryDate || cardPin;
+        if (hasAnyCardField && (!cardNumber || !cardName || !expiryDate || !cardPin)) {
+          req.flash('error', 'Please fill in all credit card fields');
+        }
+
+        if (cardNumber && cardName && expiryDate && cardPin) {
+          const cardLastFour = cardNumber.toString().slice(-4);
+          req.session.lastOrder = {
+            items: formattedItems.map(i => ({
+              productName: i.productName || i.name,
+              price: parseFloat(i.price || 0),
+              qty: parseInt(i.quantity || i.qty || 1, 10) || 1
+            })),
+            total: total.toFixed(2),
+            createdAt: new Date()
+          };
+          const paymentId = await toPromise(Payment.add, {
+            userId,
+            total: total.toFixed(2),
+            cardLastFour,
+            status: 'completed'
+          });
+          req.session.cart = [];
+          req.flash('success', 'Payment successful!');
+          return res.redirect(`/receipt/${paymentId}`);
+        }
+
         return res.render('checkout', { 
           user: req.session.user, 
           cart: formattedItems,
           cartItems: formattedItems, 
-          total: total.toFixed(2) 
+          total: total.toFixed(2),
+          messages: req.flash()
         });
       } 
       else if (paymentMethod === 'paypal') {
@@ -122,14 +150,15 @@ class PaymentController {
   static async receipt(req, res) {
     try {
       const paymentId = req.params.id;
-      const payment = await Payment.getById(paymentId);
+      const payment = await toPromise(Payment.getById, paymentId);
 
       if (!payment || payment.user_id !== req.session.user.id) {
         req.flash('error', 'Payment not found');
         return res.redirect('/');
       }
 
-      res.render('receipt', { user: req.session.user, payment });
+      const order = req.session.lastOrder || null;
+      res.render('receipt', { user: req.session.user, payment, order });
     } catch (err) {
       console.error(err);
       req.flash('error', 'Error loading receipt');
@@ -139,7 +168,7 @@ class PaymentController {
 
   static async list(req, res) {
     try {
-      const payments = await Payment.getAll();
+      const payments = await toPromise(Payment.getAll);
       res.render('payments', { user: req.session.user, payments });
     } catch (err) {
       console.error(err);
