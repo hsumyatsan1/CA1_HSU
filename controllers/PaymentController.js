@@ -1,12 +1,39 @@
 const Payment = require('../models/Payment');
-const Cart = require('../models/Cart');
 const PayPalController = require('./PayPalController');
+const Product = require('../models/Product');
+
+function toPromise(fn, ...args) {
+  return new Promise((resolve, reject) => {
+    if (typeof fn !== 'function') return reject(new Error('Not a function'));
+    fn(...args, (err, result) => err ? reject(err) : resolve(result));
+  });
+}
+
+async function buildCartFromSession(sessionCart) {
+  const cart = sessionCart || [];
+  const enriched = await Promise.all(cart.map(async (it) => {
+    const product = await toPromise(Product.getById, it.productId).catch(() => null);
+    const productName = product ? product.productName : (it.productName || it.name);
+    const price = product ? parseFloat(product.price || 0) : parseFloat(it.price || 0);
+    const quantity = it.qty || it.quantity || 1;
+    return {
+      productId: it.productId,
+      productName,
+      name: productName,
+      price,
+      quantity,
+      qty: quantity,
+      image: product ? product.image : it.image
+    };
+  }));
+  return enriched;
+}
 
 class PaymentController {
   static async show(req, res) {
     try {
       const userId = req.session.user.id;
-      const cartItems = await Cart.getByUserId(userId);
+      const cartItems = await buildCartFromSession(req.session.cart);
       
       if (!cartItems || cartItems.length === 0) {
         req.flash('error', 'Your cart is empty');
@@ -42,7 +69,7 @@ class PaymentController {
     try {
       const { paymentMethod } = req.body;
       const userId = req.session.user.id;
-      const cartItems = await Cart.getByUserId(userId);
+      const cartItems = await buildCartFromSession(req.session.cart);
       
       if (!cartItems || cartItems.length === 0) {
         req.flash('error', 'Your cart is empty');

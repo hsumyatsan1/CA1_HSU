@@ -1,13 +1,50 @@
 const Cart = require('../models/Cart');
 const Payment = require('../models/Payment');
 const paypalClient = require('../services/paypal');
+const Product = require('../models/Product');
+
+function toPromise(fn, ...args) {
+  return new Promise((resolve, reject) => {
+    if (typeof fn !== 'function') return reject(new Error('Not a function'));
+    fn(...args, (err, result) => err ? reject(err) : resolve(result));
+  });
+}
+
+function normalizeCartItems(cartItems) {
+  return (cartItems || []).map(item => ({
+    ...item,
+    name: item.productName || item.name,
+    quantity: item.qty || item.quantity || 1,
+    price: parseFloat(item.price || 0)
+  }));
+}
+
+async function buildCartFromSession(sessionCart) {
+  const cart = sessionCart || [];
+  const enriched = await Promise.all(cart.map(async (it) => {
+    const product = await toPromise(Product.getById, it.productId).catch(() => null);
+    const productName = product ? product.productName : (it.productName || it.name);
+    const price = product ? parseFloat(product.price || 0) : parseFloat(it.price || 0);
+    const quantity = it.qty || it.quantity || 1;
+    return {
+      productId: it.productId,
+      productName,
+      name: productName,
+      price,
+      quantity,
+      qty: quantity,
+      image: product ? product.image : it.image
+    };
+  }));
+  return enriched;
+}
 
 class PayPalController {
   static async createOrder(req, res) {
     try {
       console.log('PayPalController.createOrder called');
       const userId = req.session.user.id;
-      const cartItems = await Cart.getByUserId(userId);
+      const cartItems = await buildCartFromSession(req.session.cart);
 
       if (!cartItems || cartItems.length === 0) {
         req.flash('error', 'Cart is empty');
@@ -65,7 +102,9 @@ class PayPalController {
       console.log('PayPal order captured:', captureResult.status);
 
       if (captureResult.status === 'COMPLETED') {
-        const cartItems = req.session.paypalOrder?.cartItems || await Cart.getByUserId(userId);
+        const cartItems = (req.session.cart && req.session.cart.length)
+          ? await buildCartFromSession(req.session.cart)
+          : normalizeCartItems(req.session.paypalOrder?.cartItems || await Cart.getByUserId(userId));
         
         let total = 0;
         cartItems.forEach(item => {
@@ -86,6 +125,7 @@ class PayPalController {
         console.log('Payment record created:', paymentId);
 
         // Clear cart
+        req.session.cart = [];
         await Cart.clearByUserId(userId);
 
         // Clear session
