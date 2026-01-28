@@ -95,8 +95,20 @@
 <div class="products-section">
   <div class="container">
     <h2>Featured Products</h2>
-    <% if (messages && messages.length) { %>
-      <div class="alert alert-info"><%= messages.join('<br>') %></div>
+    <% if (messages && messages.error && messages.error.length) { %>
+      <div class="alert alert-danger">
+        <% messages.error.forEach(msg => { %>
+          <p><%= msg %></p>
+        <% }); %>
+      </div>
+    <% } %>
+
+    <% if (messages && messages.success && messages.success.length) { %>
+      <div class="alert alert-success">
+        <% messages.success.forEach(msg => { %>
+          <p><%= msg %></p>
+        <% }); %>
+      </div>
     <% } %>
     <div class="row g-3">
       <% if (products && products.length) { %>

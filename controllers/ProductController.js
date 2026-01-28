@@ -12,11 +12,25 @@ module.exports = {
   publicList: async (req, res) => {
     try {
       const products = await toPromise(Product.getAll) || [];
-      res.render('index', { products, user: req.session.user, messages: [...req.flash('error'), ...req.flash('success')] });
+      res.render('index', { 
+        products, 
+        user: req.session.user, 
+        messages: { 
+          error: req.flash('error'), 
+          success: req.flash('success') 
+        } 
+      });
     } catch (err) {
       console.error('publicList err', err);
       req.flash('error', 'Cannot load products');
-      res.render('index', { products: [], user: req.session.user, messages: [...req.flash('error'), ...req.flash('success')] });
+      res.render('index', { 
+        products: [], 
+        user: req.session.user, 
+        messages: { 
+          error: req.flash('error'), 
+          success: req.flash('success') 
+        } 
+      });
     }
   },
 
