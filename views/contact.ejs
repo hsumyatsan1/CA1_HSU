@@ -5,6 +5,163 @@
   <title>Contact - Supermarket</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="/css/theme.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --contact-ink: #1b1f2a;
+      --contact-muted: #6b7280;
+      --contact-accent: #7ac943;
+      --contact-accent-2: #1f6feb;
+      --contact-paper: #ffffff;
+      --contact-line: #e5e7eb;
+      --contact-warm: #f7fbf2;
+    }
+
+    body {
+      font-family: "Source Sans 3", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--contact-ink);
+      background:
+        radial-gradient(1200px 500px at 20% -10%, #dff2c9 0%, transparent 60%),
+        radial-gradient(900px 400px at 100% 0%, #dbeafe 0%, transparent 60%),
+        var(--contact-warm);
+    }
+
+    .contact-hero {
+      padding: 48px 0 24px;
+    }
+
+    .contact-title {
+      font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+      font-weight: 700;
+      font-size: clamp(2rem, 4vw, 2.75rem);
+      margin-bottom: 6px;
+    }
+
+    .contact-subtitle {
+      color: var(--contact-muted);
+      font-size: 1.05rem;
+    }
+
+    .contact-card {
+      background: var(--contact-paper);
+      border-radius: 18px;
+      border: 1px solid var(--contact-line);
+      box-shadow: 0 24px 50px rgba(16, 24, 40, 0.12);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .contact-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -40px -60px auto;
+      width: 160px;
+      height: 160px;
+      background: radial-gradient(circle, rgba(122, 201, 67, 0.25), transparent 70%);
+      pointer-events: none;
+    }
+
+    .section-title {
+      font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+      font-size: 1.5rem;
+      color: var(--contact-accent-2);
+      margin-bottom: 8px;
+    }
+
+    .section-title span {
+      color: var(--contact-accent);
+    }
+
+    .contact-list {
+      list-style: none;
+      padding-left: 0;
+      margin-bottom: 0;
+    }
+
+    .contact-list li {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 6px 0;
+      color: var(--contact-ink);
+      font-weight: 500;
+    }
+
+    .contact-list small {
+      display: block;
+      color: var(--contact-muted);
+      font-weight: 400;
+    }
+
+    .contact-label {
+      width: 16px;
+      color: var(--contact-accent);
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .contact-link {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .contact-link:hover {
+      color: var(--contact-accent-2);
+      text-decoration: underline;
+    }
+
+    .info-links a {
+      color: var(--contact-accent-2);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .info-links a:hover {
+      text-decoration: underline;
+    }
+
+    .online-tag {
+      color: var(--contact-accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.75rem;
+    }
+
+    .contact-cta {
+      border-top: 1px dashed var(--contact-line);
+      margin-top: 20px;
+      padding-top: 18px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .contact-cta .btn {
+      border-radius: 999px;
+      padding: 8px 18px;
+      font-weight: 600;
+    }
+
+    .contact-map {
+      background: linear-gradient(135deg, rgba(122, 201, 67, 0.14), rgba(31, 111, 235, 0.12));
+      border-radius: 14px;
+      border: 1px solid var(--contact-line);
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      color: var(--contact-muted);
+      font-weight: 600;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .contact-map span {
+      color: var(--contact-accent-2);
+      font-weight: 700;
+    }
+  </style>
 </head>
 <body>
 
@@ -22,12 +179,13 @@
           <li class="nav-item"><a class="nav-link" href="/inventory">Inventory</a></li>
           <li class="nav-item"><a class="nav-link" href="/users">Users</a></li>
           <li class="nav-item"><a class="nav-link" href="/feedback/all">Feedback</a></li>
-          <li class="nav-item"><a class="nav-link" href="/payments">Payments</a></li>
+          <li class="nav-item"><a class="nav-link" href="/history">History</a></li>
           <li class="nav-item"><a class="nav-link" href="/logout">Log out</a></li>
         <% } else if (user) { %>
           <li class="nav-item"><a class="nav-link" href="/shopping">Shopping</a></li>
           <li class="nav-item"><a class="nav-link" href="/cart">Cart</a></li>
           <li class="nav-item"><a class="nav-link" href="/feedback">Feedback</a></li>
+          <li class="nav-item"><a class="nav-link" href="/history">History</a></li>
           <li class="nav-item"><a class="nav-link" href="/logout">Log out</a></li>
         <% } else { %>
           <li class="nav-item"><a class="nav-link" href="/contact">Contact</a></li>
@@ -39,29 +197,91 @@
   </div>
 </nav>
 
-<div class="container mt-5">
+<div class="container contact-hero">
   <% const alerts = messages && messages.length ? messages : []; %>
   <% if (alerts.length) { %>
     <div class="alert alert-info"><%= alerts.join('<br>') %></div>
   <% } %>
 
   <div class="row justify-content-center">
-    <div class="col-md-8">
-      <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-          <h4 class="mb-0">Contact Information</h4>
-        </div>
-        <div class="card-body">
-          <p class="mb-2"><strong>Phone:</strong> <a href="tel:+61234567890">+61 2 3456 7890</a></p>
-          <p class="mb-2"><strong>Email:</strong> <a href="mailto:support@supermarket.website">support@supermarket.website</a></p>
-          <p class="mb-0"><strong>Address:</strong> Clementi St13, Singapore</p>
+    <div class="col-lg-9">
+      <div class="contact-card">
+        <div class="row g-4">
+          <div class="col-lg-6">
+            <div class="mb-4">
+              <div class="contact-title">Contact Us</div>
+              <div class="contact-subtitle">We are happy to help with orders, store queries, and feedback.</div>
+            </div>
 
-          <hr>
+            <div class="section-title"><span>Head</span> Office</div>
+            <div class="fw-semibold mb-2">Supermarket</div>
+            <div class="text-muted mb-3">Clementi<br>Singapore 728652</div>
 
-          <p class="text-muted">If you have feedback or questions, please use the button below.</p>
-          <div class="d-flex gap-2">
-            <a href="/feedback" class="btn btn-outline-primary">Send Feedback</a>
-            <a href="/" class="btn btn-secondary">Back to Home</a>
+            <ul class="contact-list mb-3">
+              <li>
+                <div class="contact-label">T</div>
+                <div>
+                  <a class="contact-link" href="tel:+6568951888">+65 6895 1888</a>
+                  <small>(8:30am - 5:00pm, Monday to Friday except Public Holidays)</small>
+                </div>
+              </li>
+              <li>
+                <div class="contact-label">F</div>
+                <div>
+                  <a class="contact-link" href="tel:+6569268265">+65 6269 8265</a>
+                </div>
+              </li>
+              <li>
+                <div class="contact-label">E</div>
+                <div>
+                  <a class="contact-link" href="mailto:contact@supermarket.com.sg">contact@supermarket.com.sg</a>
+                </div>
+              </li>
+            </ul>
+
+            <div class="info-links mb-4">
+              <span class="fw-semibold">More Information:</span>
+              <a href="#">Outlets</a> |
+              <a href="#">Career</a> |
+              <a href="#">FAQ</a>
+            </div>
+
+            <div class="online-tag mb-1">Online</div>
+            <div class="section-title mb-3">supermarket.com.sg</div>
+            <ul class="contact-list">
+              <li>
+                <div class="contact-label">T</div>
+                <div>
+                  <a class="contact-link" href="tel:+6568951888">+65 6895 1888</a>
+                  <small>(8:30am - 5:00pm, Monday to Friday except Public Holidays)</small>
+                </div>
+              </li>
+              <li>
+                <div class="contact-label">E</div>
+                <div>
+                  <a class="contact-link" href="mailto:ssonline@supermarket.com.sg">ssonline@supermarket.com.sg</a>
+                </div>
+              </li>
+              <li>
+                <div class="contact-label">W</div>
+                <div>
+                  <a class="contact-link" href="https://supermarket.com.sg" target="_blank" rel="noopener">supermarket.com.sg</a>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="col-lg-6">
+            <div class="contact-map">
+              <a href="https://th.bing.com/th/id/OIP.hL2_9VR22XVVSIPKP1sqOwHaFq?w=247&h=189&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3" target="_blank" rel="noopener">
+                <img src="https://th.bing.com/th/id/OIP.hL2_9VR22XVVSIPKP1sqOwHaFq?w=247&h=189&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3" alt="Head Office Map" style="width: 100%; height: auto; border-radius: 12px;">
+              </a>
+            </div>
+
+            <div class="contact-cta">
+              <a href="/feedback" class="btn btn-primary">Send Feedback</a>
+              <a href="/" class="btn btn-outline-secondary">Back to Home</a>
+            </div>
           </div>
         </div>
       </div>

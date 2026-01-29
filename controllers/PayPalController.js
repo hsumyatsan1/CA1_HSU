@@ -129,6 +129,9 @@ class PayPalController {
           status: 'completed'
         });
         console.log('Payment record created:', paymentId);
+        req.session.lastOrder.paymentId = paymentId;
+        req.session.orderHistory = req.session.orderHistory || [];
+        req.session.orderHistory.unshift(req.session.lastOrder);
 
         // Clear cart
         req.session.cart = [];

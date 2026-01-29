@@ -65,6 +65,9 @@ const requireAdmin = (req, res, next) => {
 
 // Home: show public product listing
 app.get('/', ProductController.publicList);
+app.get('/contact', (req, res) => {
+  res.render('contact', { user: req.session.user, messages: req.flash('info') });
+});
 
 // auth
 app.get('/register', UserController.registerForm);
@@ -79,6 +82,15 @@ app.get('/logout', (req, res) => {
 // shopping & product
 app.get('/shopping', requireAuth, ProductController.listForUser);
 app.get('/product/:id', requireAuth, ProductController.detail);
+app.get('/search', ProductController.search);
+
+// admin inventory
+app.get('/inventory', requireAuth, requireAdmin, ProductController.inventory);
+app.get('/addProduct', requireAuth, requireAdmin, ProductController.addForm);
+app.post('/product', requireAuth, requireAdmin, upload.single('image'), ProductController.add);
+app.get('/editProduct/:id', requireAuth, requireAdmin, ProductController.editForm);
+app.post('/product/:id', requireAuth, requireAdmin, upload.single('image'), ProductController.update);
+app.get('/deleteProduct/:id', requireAuth, requireAdmin, ProductController.delete);
 
 // cart
 app.get('/cart', requireAuth, CartController.listCartItems);
@@ -90,6 +102,7 @@ app.post('/cart/clear', requireAuth, CartController.clearCart);
 // payment
 app.get('/payment', requireAuth, PaymentController.show);
 app.post('/payment', requireAuth, PaymentController.pay);
+app.get('/history', requireAuth, PaymentController.history);
 
 // PayPal routes - MUST come after /payment routes
 app.post('/paypal/create-order', requireAuth, PayPalController.createOrder);
@@ -106,6 +119,8 @@ app.get('/receipt/:id', requireAuth, PaymentController.receipt);
 // feedback
 app.get('/feedback', requireAuth, FeedbackController.form);
 app.post('/feedback', requireAuth, FeedbackController.submit);
+app.get('/feedback/all', requireAuth, requireAdmin, FeedbackController.list);
+app.get('/feedback/delete/:id', requireAuth, requireAdmin, FeedbackController.delete);
 
 // 404
 app.use((req, res) => {

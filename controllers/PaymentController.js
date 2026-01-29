@@ -33,6 +33,10 @@ async function buildCartFromSession(sessionCart) {
 class PaymentController {
   static async show(req, res) {
     try {
+      if (req.session.user && req.session.user.role === 'admin') {
+        req.flash('error', 'Admins cannot make payments.');
+        return res.redirect('/inventory');
+      }
       const userId = req.session.user.id;
       const cartItems = await buildCartFromSession(req.session.cart);
       
@@ -68,6 +72,10 @@ class PaymentController {
 
   static async pay(req, res) {
     try {
+      if (req.session.user && req.session.user.role === 'admin') {
+        req.flash('error', 'Admins cannot make payments.');
+        return res.redirect('/inventory');
+      }
       const { paymentMethod, cardName, cardNumber, expiryDate, cardPin } = req.body;
       const userId = req.session.user.id;
       const cartItems = await buildCartFromSession(req.session.cart);
@@ -114,6 +122,9 @@ class PaymentController {
             cardLastFour,
             status: 'completed'
           });
+          req.session.lastOrder.paymentId = paymentId;
+          req.session.orderHistory = req.session.orderHistory || [];
+          req.session.orderHistory.unshift(req.session.lastOrder);
           req.session.cart = [];
           req.flash('success', 'Payment successful!');
           return res.redirect(`/receipt/${paymentId}`);
@@ -171,6 +182,25 @@ class PaymentController {
       console.error(err);
       req.flash('error', 'Error loading payments');
       res.redirect('/');
+    }
+  }
+
+  static async history(req, res) {
+    try {
+      const userId = req.session.user.id;
+      let payments = [];
+      let orderHistory = [];
+      if (req.session.user.role === 'admin') {
+        payments = await toPromise(Payment.getAll);
+      } else {
+        payments = await toPromise(Payment.getByUser, userId);
+        orderHistory = req.session.orderHistory || [];
+      }
+      res.render('history', { user: req.session.user, payments, orderHistory });
+    } catch (err) {
+      console.error(err);
+      req.flash('error', 'Error loading history');
+      res.redirect('/shopping');
     }
   }
 }
