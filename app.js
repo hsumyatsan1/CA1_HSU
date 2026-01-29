@@ -11,6 +11,7 @@ const CartController = require('./controllers/CartController');
 const FeedbackController = require('./controllers/FeedbackController');
 const PaymentController = require('./controllers/PaymentController');
 const PayPalController = require('./controllers/PayPalController');
+const NetsService = require('./services/nets');
 
 const app = express();
 
@@ -94,6 +95,11 @@ app.post('/payment', requireAuth, PaymentController.pay);
 app.post('/paypal/create-order', requireAuth, PayPalController.createOrder);
 app.get('/paypal/capture-order', requireAuth, PayPalController.captureOrder);
 app.get('/paypal/cancel-order', requireAuth, PayPalController.cancelOrder);
+
+// NETS QR routes
+app.post('/nets-qr/request', requireAuth, NetsService.generateQrCode);
+app.get('/nets-qr/success', requireAuth, NetsService.showSuccess);
+app.get('/nets-qr/fail', requireAuth, NetsService.showFail);
 
 app.get('/receipt/:id', requireAuth, PaymentController.receipt);
 

@@ -1,6 +1,7 @@
 const Payment = require('../models/Payment');
 const PayPalController = require('./PayPalController');
 const Product = require('../models/Product');
+const NetsService = require('../services/nets');
 
 function toPromise(fn, ...args) {
   return new Promise((resolve, reject) => {
@@ -130,12 +131,8 @@ class PaymentController {
         return PayPalController.createOrder(req, res);
       } 
       else if (paymentMethod === 'qr-code') {
-        return res.render('netsQR', { 
-          user: req.session.user, 
-          cart: formattedItems,
-          cartItems: formattedItems, 
-          total: total.toFixed(2) 
-        });
+        req.body.cartTotal = total.toFixed(2);
+        return NetsService.generateQrCode(req, res);
       }
 
       req.flash('error', 'Invalid payment method');

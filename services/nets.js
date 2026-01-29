@@ -55,7 +55,7 @@ exports.generateQrCode = async (req, res) => {
 
       
       // Render the QR code page with required data
-      res.render("netsQr", {
+      res.render("netsQR", {
         total: cartTotal,
         title: "Scan to Pay",
         qrCodeUrl: `data:image/png;base64,${qrData.qr_code}`,
@@ -75,15 +75,23 @@ exports.generateQrCode = async (req, res) => {
         errorMsg =
           qrData.error_message || "Transaction failed. Please try again.";
       }
-      res.render("netsQrFail", {
+      res.render("netsTxnFail", {
         title: "Error",
         responseCode: qrData.response_code || "N.A.",
         instructions: qrData.instruction || "",
-        errorMsg: errorMsg,
+        message: errorMsg,
       });
     }
   } catch (error) {
     console.error("Error in generateQrCode:", error.message);
     res.redirect("/nets-qr/fail");
   }
+};
+
+exports.showSuccess = (req, res) => {
+  res.render("netsTxnSuccess", { message: "Payment successful." });
+};
+
+exports.showFail = (req, res) => {
+  res.render("netsTxnFail", { message: "Payment failed or timed out." });
 };
