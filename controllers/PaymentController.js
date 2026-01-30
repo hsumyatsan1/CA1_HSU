@@ -30,6 +30,13 @@ async function buildCartFromSession(sessionCart) {
   return enriched;
 }
 
+async function decrementStockForItems(items) {
+  const updates = (items || [])
+    .filter(it => it && it.productId)
+    .map(it => toPromise(Product.decrementStock, it.productId, parseInt(it.quantity || it.qty || 1, 10) || 1));
+  await Promise.all(updates);
+}
+
 class PaymentController {
   static async show(req, res) {
     try {
@@ -122,6 +129,7 @@ class PaymentController {
             cardLastFour,
             status: 'completed'
           });
+          await decrementStockForItems(formattedItems);
           req.session.lastOrder.paymentId = paymentId;
           req.session.orderHistory = req.session.orderHistory || [];
           req.session.orderHistory.unshift(req.session.lastOrder);

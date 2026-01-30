@@ -32,49 +32,51 @@
   <h2 class="mb-3">Order and Payment History</h2>
 
   <div class="row g-3">
-    <div class="col-lg-7">
-      <div class="history-card p-3">
-        <div class="section-title mb-2">Order Summary</div>
-        <% if (orderHistory && orderHistory.length) { %>
-          <% orderHistory.forEach(order => { %>
-            <div class="border rounded p-3 mb-3">
-              <div class="d-flex justify-content-between mb-2">
-                <div>
-                  <strong>Order</strong>
-                  <div class="muted"><%= order.createdAt ? new Date(order.createdAt).toLocaleString() : '' %></div>
-                </div>
-                <div class="text-end">
-                  <div class="muted">Payment ID</div>
-                  <div><%= order.paymentId || 'N/A' %></div>
-                </div>
-              </div>
-              <% const items = order.items || []; %>
-              <% if (items.length) { %>
-                <% items.forEach(it => { %>
-                  <div class="item-row">
-                    <div>
-                      <div><strong><%= it.productName %></strong></div>
-                      <small class="muted">Qty: <%= it.qty %> x $<%= parseFloat(it.price||0).toFixed(2) %></small>
-                    </div>
-                    <div>$<%= (parseFloat(it.price||0) * parseInt(it.qty||1, 10)).toFixed(2) %></div>
+    <% if (user && user.role !== 'admin') { %>
+      <div class="col-lg-7">
+        <div class="history-card p-3">
+          <div class="section-title mb-2">Order Summary</div>
+          <% if (orderHistory && orderHistory.length) { %>
+            <% orderHistory.forEach(order => { %>
+              <div class="border rounded p-3 mb-3">
+                <div class="d-flex justify-content-between mb-2">
+                  <div>
+                    <strong>Order</strong>
+                    <div class="muted"><%= order.createdAt ? new Date(order.createdAt).toLocaleString() : '' %></div>
                   </div>
-                <% }) %>
-              <% } else { %>
-                <div class="muted">No items available</div>
-              <% } %>
-              <div class="d-flex justify-content-between mt-2">
-                <strong>Total</strong>
-                <strong>$<%= parseFloat(order.total||0).toFixed(2) %></strong>
+                  <div class="text-end">
+                    <div class="muted">Payment ID</div>
+                    <div><%= order.paymentId || 'N/A' %></div>
+                  </div>
+                </div>
+                <% const items = order.items || []; %>
+                <% if (items.length) { %>
+                  <% items.forEach(it => { %>
+                    <div class="item-row">
+                      <div>
+                        <div><strong><%= it.productName %></strong></div>
+                        <small class="muted">Qty: <%= it.qty %> x $<%= parseFloat(it.price||0).toFixed(2) %></small>
+                      </div>
+                      <div>$<%= (parseFloat(it.price||0) * parseInt(it.qty||1, 10)).toFixed(2) %></div>
+                    </div>
+                  <% }) %>
+                <% } else { %>
+                  <div class="muted">No items available</div>
+                <% } %>
+                <div class="d-flex justify-content-between mt-2">
+                  <strong>Total</strong>
+                  <strong>$<%= parseFloat(order.total||0).toFixed(2) %></strong>
+                </div>
               </div>
-            </div>
-          <% }) %>
-        <% } else { %>
-          <div class="muted">No order history yet.</div>
-        <% } %>
+            <% }) %>
+          <% } else { %>
+            <div class="muted">No order history yet.</div>
+          <% } %>
+        </div>
       </div>
-    </div>
+    <% } %>
 
-    <div class="col-lg-5">
+    <div class="col-lg-<%= (user && user.role === 'admin') ? '12' : '5' %>">
       <div class="history-card p-3">
         <div class="section-title mb-2">Payment Summary</div>
         <% if (payments && payments.length) { %>

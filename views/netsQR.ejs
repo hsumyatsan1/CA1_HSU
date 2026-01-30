@@ -3,19 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>
-        <%= title %>
-    </title>
-    <script src="https://unpkg.com/event-source-polyfill"></script> <!-- Include EventSource Polyfill -->
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/event-source-polyfill"></script>
+    <style>
+        :root {
+            --qr-bg: #f6f7fb;
+            --qr-card: #ffffff;
+            --qr-ink: #1f2330;
+            --qr-muted: #6b7280;
+            --qr-accent: #2db784;
+            --qr-line: #e5e7eb;
+        }
+
+        body {
+            font-family: "Manrope", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(800px 300px at 10% 0%, #e6f8ee 0%, transparent 60%),
+                        radial-gradient(900px 400px at 100% 0%, #e8edff 0%, transparent 65%),
+                        var(--qr-bg);
+            color: var(--qr-ink);
+        }
+
+        .qr-shell {
+            min-height: calc(100vh - 56px);
+            display: grid;
+            place-items: center;
+            padding: 32px 16px 48px;
+        }
+
+        .qr-card {
+            background: var(--qr-card);
+            border-radius: 20px;
+            padding: 28px 24px;
+            box-shadow: 0 24px 50px rgba(17, 24, 39, 0.12);
+            border: 1px solid var(--qr-line);
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .qr-title {
+            font-weight: 700;
+            font-size: 1.4rem;
+            margin-bottom: 6px;
+        }
+
+        .qr-sub {
+            color: var(--qr-muted);
+            margin-bottom: 16px;
+        }
+
+        .qr-image {
+            width: 260px;
+            height: 260px;
+            border-radius: 16px;
+            border: 1px solid var(--qr-line);
+            padding: 12px;
+            background: #fff;
+            display: inline-block;
+        }
+
+        .qr-meta {
+            margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 0.95rem;
+        }
+
+        .qr-meta span {
+            color: var(--qr-muted);
+        }
+
+        .qr-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .qr-guide {
+            margin-top: 18px;
+        }
+
+        .qr-guide img {
+            width: 100%;
+            max-width: 320px;
+            border-radius: 12px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Scan the QR Code</h1>
-    <p id="status">Scan with your bank simulator app to complete payment</p>
-    <img src="<%= qrCodeUrl %>" alt="QR Code" />
-    <p id="timer">Time remaining: 5:00</p> <!-- Countdown Timer -->
-    
-    <img height="auto" width="40%" src="./images/netsQrInfo.png" /><br />
-    <a href="/payment">Cancel</a>
+    <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Supermarket</a>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/cart">Back to Cart</a></li>
+                <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="qr-shell">
+        <div class="qr-card">
+            <div class="qr-title">Scan the QR Code</div>
+            <div class="qr-sub" id="status">Scan with your bank app to complete payment</div>
+
+            <img class="qr-image" src="<%= qrCodeUrl %>" alt="QR Code" />
+
+            <div class="qr-meta">
+                <div><span>Amount</span><br><strong>$<%= parseFloat(total || 0).toFixed(2) %></strong></div>
+                <div><span>Timer</span><br><strong id="timer">5:00</strong></div>
+            </div>
+
+            <div class="qr-actions">
+                <a href="/payment" class="btn btn-outline-secondary">Cancel</a>
+                <a href="/cart" class="btn btn-secondary">Back to Cart</a>
+            </div>
+        </div>
+    </div>
 
     <script>
         let s2sNetsTxnStatus; // Declare a variable to hold the EventSource instance
@@ -60,18 +168,18 @@
 
         // Countdown Timer Logic
         const timerElement = document.getElementById("timer");
-        const countdownDuration = 300; // 3 minutes in seconds
+        const countdownDuration = 300; // 5 minutes in seconds
         let remainingTime = countdownDuration;
 
         const updateTimer = () => {
             const minutes = Math.floor(remainingTime / 60);
             const seconds = remainingTime % 60;
-            timerElement.textContent = `Time remaining: ${minutes}:${seconds.toString().padStart(2, "0")}`;
+            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, "0")}`;
             remainingTime--;
 
             if (remainingTime < 0) {
                 clearInterval(timerInterval);
-                timerElement.textContent = "Transaction timed out.";
+                timerElement.textContent = "Timed out";
 
                 if (s2sNetsTxnStatus) {
                     s2sNetsTxnStatus.close();

@@ -39,6 +39,13 @@ async function buildCartFromSession(sessionCart) {
   return enriched;
 }
 
+async function decrementStockForItems(items) {
+  const updates = (items || [])
+    .filter(it => it && it.productId)
+    .map(it => toPromise(Product.decrementStock, it.productId, parseInt(it.quantity || it.qty || 1, 10) || 1));
+  await Promise.all(updates);
+}
+
 class PayPalController {
   static async createOrder(req, res) {
     try {
@@ -129,6 +136,7 @@ class PayPalController {
           status: 'completed'
         });
         console.log('Payment record created:', paymentId);
+        await decrementStockForItems(cartItems);
         req.session.lastOrder.paymentId = paymentId;
         req.session.orderHistory = req.session.orderHistory || [];
         req.session.orderHistory.unshift(req.session.lastOrder);

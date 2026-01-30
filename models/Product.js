@@ -35,6 +35,12 @@ module.exports = {
     db.query(sql, params, (err, result) => cb(err, result));
   },
 
+  decrementStock: (id, qty, cb) => {
+    const sql = 'UPDATE products SET quantity = GREATEST(quantity - ?, 0) WHERE id = ?';
+    const params = [qty, id];
+    db.query(sql, params, (err, result) => cb(err, result));
+  },
+
   delete: (id, cb) => {
     db.query('DELETE FROM products WHERE id = ?', [id], (err, result) => cb(err, result));
   }
